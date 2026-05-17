@@ -1,5 +1,6 @@
-streamlit
-FinanceDataReader
-yfinance
-pandas
+streamlit>=1.30.0
+finance-datareader>=0.9.6
+yfinance>=0.2.40
+pandas>=2.0.0
 lxml
+requests
