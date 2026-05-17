@@ -141,7 +141,7 @@ def get_us_top_performers(year_start, year_end, market_type):
         status.update(label="미국 데이터 분석 완료!", state="complete")
     
     progress_bar.empty()
-    return pd.DataFrame(results).sort_values(by='Return(%)', ascending=False).head(10)
+    return pd.DataFrame(results).sort_values(by='수익률(%)', ascending=False).head(10)
 
 st.header(f"📅 {display_text} 수익률 리더보드")
 
