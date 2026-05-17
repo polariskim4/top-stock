@@ -24,10 +24,30 @@ else:
     end_dt = f"{selected_year}-12-31"
     display_text = f"{selected_year}년 전체"
 
+# 한국 시장 선택 메뉴 추가
+kr_market_selection = st.sidebar.radio(
+    "한국 시장 선택",
+    ('KRX 전체', 'KOSPI', 'KOSDAQ'),
+    index=0 # 기본값은 'KRX 전체'
+)
+
+# 미국 시장 선택 메뉴 추가
+us_market_selection = st.sidebar.radio(
+    "미국 시장 선택",
+    ('S&P 500', 'NASDAQ', 'NYSE', 'AMEX', 'US 전체'),
+    index=0 # 속도를 위해 기본값을 S&P 500으로 설정
+)
+
 @st.cache_data(ttl=86400) # 하루 동안 결과 캐싱
-def get_kr_top_performers(year_start, year_end):
-    # 한국 시장 전체 리스트 (KOSPI, KOSDAQ, KONEX)
-    df_krx = fdr.StockListing('KRX')
+def get_kr_top_performers(year_start, year_end, market_type): # market_type 인자 추가
+    # 선택된 시장에 따라 종목 리스트 가져오기
+    if market_type == 'KRX 전체':
+        df_krx = fdr.StockListing('KRX') # KOSPI, KOSDAQ, KONEX 통합
+    elif market_type == 'KOSPI':
+        df_krx = fdr.StockListing('KOSPI')
+    elif market_type == 'KOSDAQ':
+        df_krx = fdr.StockListing('KOSDAQ')
+    
     tickers = df_krx['Code'].tolist()
     names = dict(zip(df_krx['Code'], df_krx['Name']))
     
@@ -57,13 +77,21 @@ def get_kr_top_performers(year_start, year_end):
     return pd.DataFrame(results).sort_values(by='수익률(%)', ascending=False).head(10)
 
 @st.cache_data(ttl=86400)
-def get_us_top_performers(year_start, year_end):
-    # 미국 시장 전체 (NASDAQ, NYSE, AMEX 통합 리스트 추출)
+def get_us_top_performers(year_start, year_end, market_type):
     with st.spinner("미국 시장 종목 리스트 구성 중..."):
-        nasdaq = fdr.StockListing('NASDAQ')['Symbol']
-        nyse = fdr.StockListing('NYSE')['Symbol']
-        amex = fdr.StockListing('AMEX')['Symbol']
-        all_us_tickers = pd.concat([nasdaq, nyse, amex]).unique().tolist()
+        if market_type == 'S&P 500':
+            all_us_tickers = fdr.StockListing('S&P500')['Symbol'].tolist()
+        elif market_type == 'NASDAQ':
+            all_us_tickers = fdr.StockListing('NASDAQ')['Symbol'].tolist()
+        elif market_type == 'NYSE':
+            all_us_tickers = fdr.StockListing('NYSE')['Symbol'].tolist()
+        elif market_type == 'AMEX':
+            all_us_tickers = fdr.StockListing('AMEX')['Symbol'].tolist()
+        else: # US 전체
+            nasdaq = fdr.StockListing('NASDAQ')['Symbol']
+            nyse = fdr.StockListing('NYSE')['Symbol']
+            amex = fdr.StockListing('AMEX')['Symbol']
+            all_us_tickers = pd.concat([nasdaq, nyse, amex]).unique().tolist()
 
     results = []
     batch_size = 200 # API 안정성을 위해 배치 사이즈 축소
@@ -102,7 +130,7 @@ col1, col2 = st.columns(2)
 with col1:
     st.subheader("🇰🇷 한국 시장 Top 10")
     if st.button(f"{selected_year} 한국 순위 집계 시작"):
-        kr_result = get_kr_top_performers(start_dt, end_dt)
+        kr_result = get_kr_top_performers(start_dt, end_dt, kr_market_selection) # market_type 전달
         if not kr_result.empty:
             st.dataframe(kr_result, use_container_width=True)
             st.bar_chart(kr_result.set_index('종목명')['수익률(%)'])
@@ -112,7 +140,7 @@ with col1:
 with col2:
     st.subheader("🇺🇸 미국 시장 Top 10")
     if st.button(f"{selected_year} 미국 순위 집계 시작"):
-        us_result = get_us_top_performers(start_dt, end_dt)
+        us_result = get_us_top_performers(start_dt, end_dt, us_market_selection)
         if not us_result.empty:
             st.dataframe(us_result, use_container_width=True)
             st.bar_chart(us_result.set_index('Ticker')['Return(%)'])
