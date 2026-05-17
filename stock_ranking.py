@@ -96,7 +96,6 @@ def get_kr_top_performers(year_start, year_end, market_type): # market_type 인�
                                 if s_price > 0:
                                     ret = ((e_price / s_price) - 1) * 100
                                     results.append({
-                                        '섹터': tickers_info[ticker]['sector'],
                                         '종목코드': ticker.split('.')[0], 
                                         '종목명': tickers_info[ticker]['name'], 
                                         '수익률(%)': float(ret)
@@ -229,6 +228,7 @@ with col1:
                     "수익률(%)": st.column_config.NumberColumn(format="%.1f")
                 }
             )
+            st.link_button("📊 네이버 증권 홈페이지 바로가기", "https://finance.naver.com")
         else:
             st.error("데이터를 불러오지 못했습니다.")
 
@@ -245,6 +245,7 @@ with col2:
                     "수익률(%)": st.column_config.NumberColumn(format="%.1f")
                 }
             )
+            st.link_button("📈 Finviz 홈페이지 바로가기", "https://finviz.com")
         else:
             st.error("데이터를 불러오지 못했습니다.")
 
