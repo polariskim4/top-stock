@@ -232,7 +232,13 @@ with col1:
                 kr_result, 
                 use_container_width=True, 
                 hide_index=True,
-                column_config={"수익률(%)": st.column_config.NumberColumn(format="%.1f")}
+                column_config={
+                    "종목코드": st.column_config.LinkColumn(
+                        "종목코드",
+                        url_template="https://finance.naver.com/item/main.naver?code={종목코드}"
+                    ),
+                    "수익률(%)": st.column_config.NumberColumn(format="%.1f")
+                }
             )
         else:
             st.error("데이터를 불러오지 못했습니다.")
@@ -246,7 +252,13 @@ with col2:
                 us_result, 
                 use_container_width=True, 
                 hide_index=True,
-                column_config={"수익률(%)": st.column_config.NumberColumn(format="%.1f")}
+                column_config={
+                    "티커": st.column_config.LinkColumn(
+                        "티커",
+                        url_template="https://finviz.com/quote.ashx?t={티커}"
+                    ),
+                    "수익률(%)": st.column_config.NumberColumn(format="%.1f")
+                }
             )
         else:
             st.error("데이터를 불러오지 못했습니다.")
