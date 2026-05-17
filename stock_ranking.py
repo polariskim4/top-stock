@@ -29,17 +29,28 @@ else:
 # 3. 시장 선택 메뉴 (라디오 버튼으로 변경 및 범위 한정)
 kr_market_selection = st.sidebar.radio(
     "🇰🇷 한국 시장 선택 (주요 지수)",
-    ('KOSPI200', 'KOSDAQ150'),
+    ('KOSPI 200', 'KOSDAQ 150'),
     index=0
 )
 
 @st.cache_data(ttl=86400) # 하루 동안 결과 캐싱
 def get_kr_top_performers(year_start, year_end, market_type): # market_type 인자 추가
-    # 선택된 시장(KOSPI/KOSDAQ)의 종목 리스트 가져오기
-    df_krx = fdr.StockListing(market_type)
+    # FinanceDataReader는 'KOSPI200', 'KOSDAQ150' 명칭을 직접 지원하지 않으므로
+    # 기본 시장(KOSPI/KOSDAQ) 데이터를 가져온 후 시가총액 상위 종목으로 한정합니다.
+    base_market = 'KOSPI' if 'KOSPI' in market_type else 'KOSDAQ'
+    df_krx = fdr.StockListing(base_market)
+    
+    # 시가총액(Marcap) 기준으로 상위 200/150개 추출 (지수 구성 종목 모사)
+    limit = 200 if '200' in market_type else 150
+    if 'Marcap' in df_krx.columns:
+        df_krx = df_krx.sort_values('Marcap', ascending=False).head(limit)
+    else:
+        df_krx = df_krx.head(limit)
+
     # 섹터 정보 보강을 위해 전체 리스트 참조
     df_all = fdr.StockListing('KRX')
-    sector_map = dict(zip(df_all['Code'], df_all['Sector']))
+    all_code_col = 'Code' if 'Code' in df_all.columns else 'Symbol'
+    sector_map = dict(zip(df_all[all_code_col], df_all['Sector'])) if 'Sector' in df_all.columns else {}
     
     # ETP(ETF, ETN), 스팩(SPAC), 정리매매 종목 필터링 (상장폐지 및 거래종목 관리)
     exclude_keywords = 'ETF|ETN|스팩|제[0-9]+호|정리매매'
