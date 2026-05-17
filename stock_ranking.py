@@ -53,7 +53,7 @@ def get_kr_top_performers(year_start, year_end, market_type): # market_type 인�
     if 'Sector' in df_all.columns:
         df_all['Sector'] = df_all['Sector'].fillna('기타')
         all_code_col = 'Code' if 'Code' in df_all.columns else 'Symbol'
-        sector_map = dict(zip(df_all[all_code_col], df_all['Sector']))
+        sector_map = {str(code): str(sector) for code, sector in zip(df_all[all_code_col], df_all['Sector'])}
     
     # ETP(ETF, ETN), 스팩(SPAC), 정리매매 종목 필터링 (상장폐지 및 거래종목 관리)
     exclude_keywords = 'ETF|ETN|스팩|제[0-9]+호|정리매매'
@@ -63,7 +63,7 @@ def get_kr_top_performers(year_start, year_end, market_type): # market_type 인�
     code_col = 'Code' if 'Code' in df_krx.columns else 'Symbol'
     suffix = '.KS' if 'KOSPI' in market_type else '.KQ'
     # 종목 정보 맵 (이름, 섹터)
-    tickers_info = {row[code_col] + suffix: {'name': row['Name'], 'sector': sector_map.get(row[code_col], 'N/A')} for _, row in df_krx.iterrows()}
+    tickers_info = {str(row[code_col]) + suffix: {'name': row['Name'], 'sector': sector_map.get(str(row[code_col]), '기타')} for _, row in df_krx.iterrows()}
     all_tickers = list(tickers_info.keys())
     
     results = []
@@ -117,11 +117,14 @@ def get_us_top_performers(year_start, year_end, market_type):
         resp_sp = requests.get(url_sp500, headers={'User-agent': 'Mozilla/5.0'})
         df_sp500 = pd.read_html(io.StringIO(resp_sp.text), match='Symbol')[0]
         
+        def extract_sector(row, primary, secondary):
+            # 결측치(NaN)가 아닌 값을 우선적으로 선택
+            p_val = row.get(primary)
+            if pd.notna(p_val): return p_val
+            return row.get(secondary, 'Other')
+
         # 상세 섹터(GICS Sub-Industry) 정보를 기본으로 마스터 맵 구축
-        master_map = {row['Symbol']: {
-            'name': row['Security'], 
-            'sector': row.get('GICS Sub-Industry', row.get('GICS Sector', 'Other'))
-        } for _, row in df_sp500.iterrows()}
+        master_map = {row['Symbol']: {'name': row['Security'], 'sector': extract_sector(row, 'GICS Sub-Industry', 'GICS Sector')} for _, row in df_sp500.iterrows()}
 
         us_info_map = {}
         if market_type == 'S&P 500':
@@ -137,7 +140,7 @@ def get_us_top_performers(year_start, year_end, market_type):
                 if ticker in master_map:
                     us_info_map[ticker] = master_map[ticker]
                 else:
-                    us_info_map[ticker] = {'name': row['Company'], 'sector': row.get('GICS Sub-Industry', row.get('GICS Sector', 'Technology'))}
+                    us_info_map[ticker] = {'name': row['Company'], 'sector': extract_sector(row, 'GICS Sub-Industry', 'GICS Sector')}
         elif market_type == 'Dow 30':
             # 위키피디아에서 Dow Jones Industrial Average 구성 종목 리스트 추출
             url = 'https://en.wikipedia.org/wiki/Dow_Jones_Industrial_Average'
