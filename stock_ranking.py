@@ -41,14 +41,15 @@ def get_kr_top_performers(year_start, year_end):
         for i, ticker in enumerate(tickers):
             if i % 100 == 0: progress_bar.progress(i/total)
             try:
-                df = fdr.DataReader(ticker, year_start, year_end)
-                if len(df) > 10:
-                    # 첫 거래일과 마지막 거래일 종가 비교
-                    start_price = float(df['Close'].iloc[0])
-                    end_price = float(df['Close'].iloc[-1])
-                    if start_price > 0:
+                # 기간 내 데이터가 존재하는지 확인하기 위해 수정
+                df = fdr.DataReader(ticker, year_start, year_end)['Close']
+                if len(df) >= 2:
+                    start_price = float(df.iloc[0])
+                    end_price = float(df.iloc[-1])
+                    if start_price > 0 and not pd.isna(start_price) and not pd.isna(end_price):
                         ret = ((end_price / start_price) - 1) * 100
-                        results.append({'종목코드': ticker, '종목명': names[ticker], '수익률(%)': round(ret, 2)})
+                        if abs(ret) < 10000: # 비정상적인 데이터(상장폐지 등) 필터링
+                            results.append({'종목코드': ticker, '종목명': names.get(ticker, ticker), '수익률(%)': round(ret, 2)})
             except:
                 continue
         status.update(label="한국 데이터 분석 완료!", state="complete")
@@ -71,16 +72,21 @@ def get_us_top_performers(year_start, year_end):
     with st.status("미국 종목 분석 중...", expanded=True) as status:
         for i in range(0, len(all_us_tickers), batch_size):
             batch = all_us_tickers[i:i+batch_size]
-            progress_bar.progress(min(i/len(all_us_tickers), 1.0))
+            current_progress = min(i / len(all_us_tickers), 1.0)
+            progress_bar.progress(current_progress)
             try:
-                # 시작일과 종료일의 종가만 가져옴
-                data = yf.download(batch, start=year_start, end=year_end, progress=False)['Close']
+                # yfinance 다운로드 시 발생할 수 있는 오류 방지를 위해 threads=True 사용
+                data = yf.download(batch, start=year_start, end=year_end, progress=False, threads=True)['Close']
                 if not data.empty:
-                    for ticker in data.columns:
-                        ticker_data = data[ticker].dropna()
-                        if len(ticker_data) > 2:
-                            ret = ((ticker_data.iloc[-1] / ticker_data.iloc[0]) - 1) * 100
-                            if float(ticker_data.iloc[0]) > 0:
+                    # 단일 종목일 경우와 다중 종목일 경우 처리
+                    temp_df = data if isinstance(data, pd.DataFrame) else data.to_frame()
+                    for ticker in temp_df.columns:
+                        ticker_series = temp_df[ticker].dropna()
+                        if len(ticker_series) >= 2:
+                            s_price = float(ticker_series.iloc[0])
+                            e_price = float(ticker_series.iloc[-1])
+                            if s_price > 0:
+                                ret = ((e_price / s_price) - 1) * 100
                                 results.append({'Ticker': ticker, 'Return(%)': round(float(ret), 2)})
             except:
                 continue
