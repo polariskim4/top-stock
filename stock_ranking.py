@@ -70,20 +70,20 @@ def get_us_top_performers(year_start, year_end):
     
     with st.status("미국 종목 분석 중...", expanded=True) as status:
         for i in range(0, len(all_us_tickers), batch_size):
-        batch = all_us_tickers[i:i+batch_size]
-        progress_bar.progress(min(i/len(all_us_tickers), 1.0))
-        try:
-            # 시작일과 종료일의 종가만 가져옴
-            data = yf.download(batch, start=year_start, end=year_end, progress=False)['Close']
-            if not data.empty:
-                for ticker in data.columns:
-                    ticker_data = data[ticker].dropna()
-                    if len(ticker_data) > 2:
-                        ret = ((ticker_data.iloc[-1] / ticker_data.iloc[0]) - 1) * 100
-                        if float(ticker_data.iloc[0]) > 0:
-                            results.append({'Ticker': ticker, 'Return(%)': round(float(ret), 2)})
-        except:
-            continue
+            batch = all_us_tickers[i:i+batch_size]
+            progress_bar.progress(min(i/len(all_us_tickers), 1.0))
+            try:
+                # 시작일과 종료일의 종가만 가져옴
+                data = yf.download(batch, start=year_start, end=year_end, progress=False)['Close']
+                if not data.empty:
+                    for ticker in data.columns:
+                        ticker_data = data[ticker].dropna()
+                        if len(ticker_data) > 2:
+                            ret = ((ticker_data.iloc[-1] / ticker_data.iloc[0]) - 1) * 100
+                            if float(ticker_data.iloc[0]) > 0:
+                                results.append({'Ticker': ticker, 'Return(%)': round(float(ret), 2)})
+            except:
+                continue
         status.update(label="미국 데이터 분석 완료!", state="complete")
     
     progress_bar.empty()
