@@ -222,26 +222,15 @@ with col1:
     if st.button(f"{selected_year} 한국 순위 집계 시작"):
         kr_result = get_kr_top_performers(start_dt, end_dt, kr_market_selection) # market_type 전달
         if not kr_result.empty:
-            # 내부 컬럼명을 ASCII로 변경하여 Python 3.14 및 Streamlit 텔레메트리 오류 방지
-            kr_display = kr_result.rename(columns={
-                "섹터": "Sector",
-                "종목코드": "Code",
-                "종목명": "Name",
-                "수익률(%)": "Yield"
-            })
-            kr_config = {
-                "Sector": st.column_config.TextColumn(label="섹터"),
-                "Code": st.column_config.LinkColumn(
-                    label="종목코드",
-                    url_template="https://finance.naver.com/item/main.naver?code={value}"
-                ),
-                "Name": st.column_config.TextColumn(label="종목명"),
-                "Yield": st.column_config.NumberColumn(
-                    label="수익률(%)",
-                    format="%.1f"
-                )
-            }
-            st.dataframe(kr_display, use_container_width=True, hide_index=True, column_config=kr_config)
+            st.dataframe(
+                kr_result,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "종목코드": st.column_config.LinkColumn(url_template="https://finance.naver.com/item/main.naver?code={value}"),
+                    "수익률(%)": st.column_config.NumberColumn(format="%.1f")
+                }
+            )
         else:
             st.error("데이터를 불러오지 못했습니다.")
 
@@ -250,26 +239,15 @@ with col2:
     if st.button(f"{selected_year} 미국 순위 집계 시작"):
         us_result = get_us_top_performers(start_dt, end_dt, us_market_selection)
         if not us_result.empty:
-            # 미국 데이터도 동일하게 ASCII 컬럼명으로 변환하여 안정성 확보
-            us_display = us_result.rename(columns={
-                "섹터": "Sector",
-                "티커": "Ticker",
-                "종목명": "Name",
-                "수익률(%)": "Yield"
-            })
-            us_config = {
-                "Sector": st.column_config.TextColumn(label="섹터"),
-                "Ticker": st.column_config.LinkColumn(
-                    label="티커",
-                    url_template="https://finviz.com/quote.ashx?t={value}"
-                ),
-                "Name": st.column_config.TextColumn(label="종목명"),
-                "Yield": st.column_config.NumberColumn(
-                    label="수익률(%)",
-                    format="%.1f"
-                )
-            }
-            st.dataframe(us_display, use_container_width=True, hide_index=True, column_config=us_config)
+            st.dataframe(
+                us_result,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "티커": st.column_config.LinkColumn(url_template="https://finviz.com/quote.ashx?t={value}"),
+                    "수익률(%)": st.column_config.NumberColumn(format="%.1f")
+                }
+            )
         else:
             st.error("데이터를 불러오지 못했습니다.")
 
