@@ -5,6 +5,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 import requests
 import time
+import io
 
 st.set_page_config(page_title="Global Stock Yield Ranking", layout="wide")
 
@@ -89,12 +90,12 @@ def get_us_top_performers(year_start, year_end, market_type):
             # 위키피디아에서 Nasdaq 100 구성 종목 리스트 추출
             url = 'https://en.wikipedia.org/wiki/Nasdaq-100'
             resp = requests.get(url, headers={'User-agent': 'Mozilla/5.0'})
-            all_us_tickers = pd.read_html(resp.text)[4]['Ticker'].tolist()
+            all_us_tickers = pd.read_html(io.StringIO(resp.text))[4]['Ticker'].tolist()
         elif market_type == 'Dow 30':
             # 위키피디아에서 Dow Jones Industrial Average 구성 종목 리스트 추출
             url = 'https://en.wikipedia.org/wiki/Dow_Jones_Industrial_Average'
             resp = requests.get(url, headers={'User-agent': 'Mozilla/5.0'})
-            all_us_tickers = pd.read_html(resp.text)[1]['Symbol'].tolist()
+            all_us_tickers = pd.read_html(io.StringIO(resp.text))[1]['Symbol'].tolist()
 
     # yfinance 호환성을 위해 티커 기호 정제 (예: BRK.B -> BRK-B)
     all_us_tickers = [ticker.replace('.', '-') for ticker in all_us_tickers]
