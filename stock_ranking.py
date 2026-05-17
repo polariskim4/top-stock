@@ -226,8 +226,7 @@ with col1:
                 use_container_width=True,
                 hide_index=True,
                 column_config={
-                    "종목코드": st.column_config.LinkColumn(label="종목코드", url_template="https://finance.naver.com/item/main.naver?code={value}"),
-                    "수익률(%)": st.column_config.NumberColumn(label="수익률(%)", format="%.1f")
+                    "수익률(%)": st.column_config.NumberColumn(format="%.1f")
                 }
             )
         else:
@@ -243,8 +242,7 @@ with col2:
                 use_container_width=True,
                 hide_index=True,
                 column_config={
-                    "티커": st.column_config.LinkColumn(label="티커", url_template="https://finviz.com/quote.ashx?t={value}"),
-                    "수익률(%)": st.column_config.NumberColumn(label="수익률(%)", format="%.1f")
+                    "수익률(%)": st.column_config.NumberColumn(format="%.1f")
                 }
             )
         else:
